@@ -11,10 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.ValueNode;
-import io.github.achachraf.typeson.TypesonException;
-import io.github.achachraf.typeson.aplication.ConfigProvider;
-import io.github.achachraf.typeson.aplication.DeserializeService;
-import io.github.achachraf.typeson.aplication.TypingService;
+import io.github.achachraf.typeson.aplication.*;
 import io.github.achachraf.typeson.domain.ElementType;
 import io.github.classgraph.ClassGraph;
 import io.github.classgraph.ClassInfoList;
@@ -54,7 +51,7 @@ public class DeserializerServiceClassGraph implements DeserializeService {
             }
             return mapObject(treeNode, type);
         } catch (JsonProcessingException e) {
-            throw new TypesonException("Error when processing Json Object: "+source, e);
+            throw new DeserializationException("Error when processing Json Object: "+source, e);
         }
     }
 
@@ -72,7 +69,7 @@ public class DeserializerServiceClassGraph implements DeserializeService {
                     }
                     return (T) mapArray((ArrayNode) treeNode, containerParameterizedType);
                 } catch (JsonProcessingException e) {
-                    throw new RuntimeException("Error when processing Json Array: "+source, e);
+                    throw new DeserializationException("Error when processing Json Array: "+source, e);
                 }
             }
             else{
@@ -86,6 +83,10 @@ public class DeserializerServiceClassGraph implements DeserializeService {
 
     @Override
     public <T> ArrayList<T> deserializeArray(String source, Class<T> type) {
+        Objects.requireNonNull(type, "Type cannot be null");
+        if(Collection.class.isAssignableFrom(type)){
+            throw new IllegalArgumentException("Type cannot be a Collection, use TypeReference instead");
+        }
         return deserializeArray(source, typingService.getArrayListTypeReference(type));
     }
 
@@ -123,7 +124,7 @@ public class DeserializerServiceClassGraph implements DeserializeService {
         try {
             object = (T) typeClass.getDeclaredConstructor().newInstance();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
-            throw new TypesonException("Cannot instantiate object of type: "+typeClass,e);
+            throw new DeserializationException("Cannot instantiate object of type: "+typeClass,e);
         }
         for(Map.Entry<String, Method> methodEntry : setters.entrySet()){
             String fieldName = methodEntry.getKey();
@@ -134,7 +135,7 @@ public class DeserializerServiceClassGraph implements DeserializeService {
             }
             if(fieldNode == null){
                 if(configProvider.getProperty(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)){
-                    throw new TypesonException("Null value for primitive field: "+fieldName);
+                    throw new DeserializationException("Null value for primitive field: "+fieldName);
                 }
             }
             else{
@@ -180,7 +181,7 @@ public class DeserializerServiceClassGraph implements DeserializeService {
             }
         }
         catch (InvocationTargetException | IllegalAccessException e) {
-            throw new TypesonException("Cannot set value for field: "+fieldName, e);
+            throw new DeserializationException("Cannot set value for field: "+fieldName, e);
         }
 
     }
@@ -192,13 +193,13 @@ public class DeserializerServiceClassGraph implements DeserializeService {
     private Collection<Object> mapJavaCollection(ArrayNode arrayNode, ParameterizedType containerParameterizedType) {
         Collection<Object> collection = typingService.instantiateContainer((Class<? extends Collection>) containerParameterizedType.getRawType());
         if(!isHomogeneous(arrayNode)){
-            throw new IllegalArgumentException("arrayNode is not homogeneous");
+            throw new IllegalStateException("arrayNode is not homogeneous");
         }
         JsonNodeType jsonNodeType = arrayNode.get(0).getNodeType();
         Type elementType = containerParameterizedType.getActualTypeArguments()[0];
         if(jsonNodeType == JsonNodeType.OBJECT){
             if(!(elementType instanceof Class<?> actualParameterizedType)){
-                throw new IllegalArgumentException("elementType is not Class");
+                throw new IllegalStateException("elementType is not Class but a "+elementType.getClass()+", probably due to a nested generic type, please use TypeReference");
             }
             for(JsonNode jsonNode : arrayNode){
                 collection.add(mapObject(jsonNode, actualParameterizedType));
@@ -218,7 +219,7 @@ public class DeserializerServiceClassGraph implements DeserializeService {
                 }
             }
             else{
-                throw new IllegalArgumentException("actualParameterizedType is not Collection or Array");
+                throw new IllegalStateException("actualParameterizedType is not Collection or Array");
             }
         }
 
@@ -326,7 +327,7 @@ public class DeserializerServiceClassGraph implements DeserializeService {
                 }
             }
         }
-        throw new TypesonException("Cannot find a sub-class of " + type.getCanonicalName() + " annotated with @ElementType and value='"+typeName+"' in classpath");
+        throw new DeserializationException("Cannot find a sub-class of " + type.getCanonicalName() + " annotated with @ElementType and value='"+typeName+"' in classpath");
     }
 
 
@@ -358,17 +359,17 @@ public class DeserializerServiceClassGraph implements DeserializeService {
         }
         if(type == Character.class || type == char.class){
             if (valueNode.textValue().length() != 1) {
-                throw new IllegalArgumentException("source field is not char: " + valueNode.textValue());
+                throw new TypingException("source field is not char: " + valueNode.textValue());
             }
             return valueNode.textValue().charAt(0);
         }
         if(type == Collection.class ){
-            throw new IllegalArgumentException("Collection type not supported");
+            throw new TypingException("Collection type not supported");
         }
         if(type == Object.class){
-            throw new IllegalArgumentException("Object type not supported");
+            throw new TypingException("Object type not supported");
         }
-        throw new IllegalArgumentException("Unknown type: "+type);
+        throw new TypingException("Unknown type: "+type);
     }
 
 
@@ -380,7 +381,7 @@ public class DeserializerServiceClassGraph implements DeserializeService {
         String expectedType = typingService.isValue(type) ? "value" : (typingService.isArray(type) ? "array" : "object");
         String actualType = fieldNode.isValueNode() ? "value" : (fieldNode.isArray() ? "array" : "object");
         if(!expectedType.equals(actualType)){
-            throw new IllegalArgumentException("Field "+fieldName+" expected to be a "+expectedType+" node, found "+actualType+" node: "+fieldNode);
+            throw new UnexpectedFieldException("Field "+fieldName+" expected to be a "+expectedType+" node, found "+actualType+" node: "+fieldNode);
         }
     }
 
@@ -408,7 +409,7 @@ public class DeserializerServiceClassGraph implements DeserializeService {
             expectedType = JsonNodeType.NULL;
         }
         if(valueNode.getNodeType() != expectedType){
-            throw new IllegalArgumentException("Field "+fieldName+" expected to be a "+expectedType+" node, found "+valueNode.getNodeType()+" node: "+valueNode);
+            throw new UnexpectedFieldException("Field "+fieldName+" expected to be a "+expectedType+" node, found "+valueNode.getNodeType()+" node: "+valueNode);
         }
 
 

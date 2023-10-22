@@ -1,8 +1,7 @@
-package io.github.achachraf.typeson;
+package io.github.achachraf.typeson.interlay;
 
 import io.github.achachraf.typeson.domain.ElementType;
-import io.github.achachraf.typeson.interlay.Typeson;
-import io.github.achachraf.typeson.mock.*;
+import io.github.achachraf.typeson.interlay.mock.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

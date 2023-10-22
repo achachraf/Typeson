@@ -1,13 +1,12 @@
-package io.github.achachraf.typeson;
+package io.github.achachraf.typeson.interlay;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.io.JsonEOFException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import io.github.achachraf.typeson.interlay.ConfigProviderMapImpl;
-import io.github.achachraf.typeson.interlay.DeserializerServiceClassGraph;
-import io.github.achachraf.typeson.mock.*;
+import io.github.achachraf.typeson.aplication.UnexpectedFieldException;
+import io.github.achachraf.typeson.interlay.mock.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
@@ -18,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class DeserializerServiceClassGraphTest {
 
 
-    private final DeserializerServiceClassGraph deserializerService = new DeserializerServiceClassGraph(new ConfigProviderMapImpl());
+    private final DeserializerServiceClassGraph deserializerService = new DeserializerServiceClassGraph(new ConfigProviderMap());
 
     @Test
     public void testDeserialize(){
@@ -157,8 +156,8 @@ public class DeserializerServiceClassGraphTest {
     @Test
     public void testDeserializeListInObjectNoType(){
         DeserializerServiceClassGraph deserializerService = new DeserializerServiceClassGraph(
-                new ConfigProviderMapImpl()
-                        .addProperty(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+                new ConfigProviderMap()
+                        .setProperty(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
         );
         String json = "{\"name\":\"Afigure\",\"shapes\":[{\"name\":\"Acircle\",\"radius\":10},{\"name\":\"Arectangle\",\"width\":10,\"height\":20}, {\"name\":\"Ashape\"}]}";
         Figure figure = deserializerService.deserialize(json, Figure.class);
@@ -559,7 +558,7 @@ public class DeserializerServiceClassGraphTest {
     @Test
     public void testDeserializeObjectWithWrongType(){
         String json = "{\"name\":\"figure1\",\"shapes\":{\"name\":\"shape11\"}}";
-        Throwable throwable = assertThrows(IllegalArgumentException.class, () -> deserializerService.deserialize(json, Figure.class));
+        Throwable throwable = assertThrows(UnexpectedFieldException.class, () -> deserializerService.deserialize(json, Figure.class));
         assertEquals("Field shapes expected to be a array node, found object node: {\"name\":\"shape11\"}", throwable.getMessage());
     }
 
@@ -567,14 +566,14 @@ public class DeserializerServiceClassGraphTest {
     public void testDeserializeGenericObject(){
         String json = "{\"value\":{\"name\":\"shape11\"}}";
         Throwable throwable = assertThrows(IllegalArgumentException.class, () ->deserializerService.deserialize(json, CustomGeneric.class));
-        assertEquals("Field class io.github.achachraf.typeson.mock.CustomGeneric is a generic, and it is not supported yet", throwable.getMessage());
+        assertEquals("Field class io.github.achachraf.typeson.interlay.mock.CustomGeneric is a generic, and it is not supported yet", throwable.getMessage());
 
     }
 
     @Test
     public void testDeserializeIncompatibleType() {
         String json = "{\"name\":{\"aaa\":\"bbb\"}}";
-        Throwable throwable = assertThrows(IllegalArgumentException.class, () -> deserializerService.deserialize(json, Shape.class));
+        Throwable throwable = assertThrows(UnexpectedFieldException.class, () -> deserializerService.deserialize(json, Shape.class));
         assertEquals("Field name expected to be a value node, found object node: {\"aaa\":\"bbb\"}", throwable.getMessage());
 
     }
@@ -582,7 +581,7 @@ public class DeserializerServiceClassGraphTest {
     @Test
     public void testDeserializeIncompatibleType2()  {
         String json = "{\"type\":\"circle\",\"name\":\"circle\",\"radius\":\"10\"}";
-        Throwable throwable = assertThrows(IllegalArgumentException.class, () -> deserializerService.deserialize(json, Shape.class));
+        Throwable throwable = assertThrows(UnexpectedFieldException.class, () -> deserializerService.deserialize(json, Shape.class));
         assertEquals("Field radius expected to be a NUMBER node, found STRING node: \"10\"", throwable.getMessage());
 
     }
@@ -627,8 +626,16 @@ public class DeserializerServiceClassGraphTest {
 
         String json2 = "{\"diff_name\":\"aa\", \"many_aliases3\":\"bb\"}";
         Throwable throwable = assertThrows(IllegalStateException.class, () -> deserializerService.deserialize(json2, MockForJsonProperty.class));
-        assertEquals("Unknown properties: [many_aliases3] for type: class io.github.achachraf.typeson.mock.MockForJsonProperty", throwable.getMessage());
+        assertEquals("Unknown properties: [many_aliases3] for type: class io.github.achachraf.typeson.interlay.mock.MockForJsonProperty", throwable.getMessage());
     }
+
+    @Test
+    public void testSerializeNestedCollectionFail(){
+        String json = "[[{\"name\":\"shape11\"}]]";
+        Throwable throwable = assertThrows(IllegalArgumentException.class, () ->deserializerService.deserializeArray(json, List.class));
+        assertEquals("Type cannot be a Collection, use TypeReference instead", throwable.getMessage());
+    }
+
 
 
 

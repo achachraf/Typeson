@@ -1,4 +1,4 @@
-package io.github.achachraf.typeson.mock;
+package io.github.achachraf.typeson.interlay.mock;
 
 import java.util.ArrayList;
 import java.util.List;

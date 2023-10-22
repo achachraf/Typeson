@@ -14,7 +14,7 @@ public class ObjectInfoService {
 
     private static final String ROOT_NAME = "$ROOT_OBJECT$";
 
-    public ObjectInfo getObjectInfo(Object object) {
+    ObjectInfo getObjectInfo(Object object) {
         if(object.getClass().isArray() && Array.getLength(object) > 0){
             return getObjectInfoForArray((Object[])object);
         }

@@ -1,6 +1,7 @@
 package io.github.achachraf.typeson.interlay;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import io.github.achachraf.typeson.aplication.TypingException;
 import io.github.achachraf.typeson.aplication.TypingService;
 import org.slf4j.Logger;
 
@@ -72,7 +73,7 @@ public class TypingServiceImpl implements TypingService {
         if(Deque.class.isAssignableFrom(containerClass)){
             return new ArrayDeque<>();
         }
-        throw new IllegalArgumentException("containerClass is not supported: "+containerClass);
+        throw new TypingException("containerClass is not supported: "+containerClass);
 
     }
 

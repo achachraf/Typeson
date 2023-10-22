@@ -1,4 +1,4 @@
-package io.github.achachraf.typeson.mock;
+package io.github.achachraf.typeson.interlay.mock;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;

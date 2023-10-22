@@ -5,12 +5,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.achachraf.typeson.aplication.SerializationException;
 import io.github.achachraf.typeson.aplication.SerializerService;
 import io.github.achachraf.typeson.domain.ElementType;
 import io.github.achachraf.typeson.domain.ListObjectInfo;
 import io.github.achachraf.typeson.domain.ObjectInfo;
 import io.github.achachraf.typeson.domain.SingleObjectInfo;
 import org.slf4j.Logger;
+
+import java.util.Objects;
 
 public class SerializerServiceImpl implements SerializerService {
 
@@ -22,13 +25,14 @@ public class SerializerServiceImpl implements SerializerService {
 
     @Override
     public String serialize(Object object){
+        Objects.requireNonNull(object, "object cannot be null");
         ObjectInfo objectInfo = objectInfoService.getObjectInfo(object);
         JsonNode jsonNode = objectMapper.valueToTree(object);
         insertType(jsonNode, objectInfo);
         try {
             return objectMapper.writeValueAsString(jsonNode);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new SerializationException("Error when serializing object: ",e);
         }
     }
 
@@ -40,7 +44,7 @@ public class SerializerServiceImpl implements SerializerService {
             insertTypeInArray((ArrayNode) jsonNode, listObjectInfo);
         }
         else{
-            throw new IllegalArgumentException("objectInfo is not SingleObjectInfo or ListObjectInfo");
+            throw new IllegalArgumentException("Internal error has occurred, objectInfo is not instance of SingleObjectInfo or ListObjectInfo");
         }
     }
 
@@ -56,11 +60,14 @@ public class SerializerServiceImpl implements SerializerService {
             ElementType elementType = type.getAnnotation(ElementType.class);
             String typeField = elementType.field();
             String typeName = elementType.name();
+            if(typeName.isBlank()){
+                throw new SerializationException("Type name is not specified in ElementType annotation for type: "+type.getCanonicalName());
+            }
             objectNode.put(typeField, typeName);
         }
         for (ObjectInfo objectInfo : singleObjectInfo.getSubObjects()){
             if(!objectNode.has(objectInfo.getName())){
-                throw new IllegalArgumentException("jsonNode does not contain field: "+objectInfo.getName());
+                throw new SerializationException("jsonNode does not contain field: "+objectInfo.getName());
             }
             JsonNode subJsonNode = objectNode.get(objectInfo.getName());
             insertAnyType(objectInfo, subJsonNode);

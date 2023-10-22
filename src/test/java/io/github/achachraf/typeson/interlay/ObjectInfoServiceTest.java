@@ -1,10 +1,9 @@
-package io.github.achachraf.typeson;
+package io.github.achachraf.typeson.interlay;
 
 import io.github.achachraf.typeson.domain.ListObjectInfo;
 import io.github.achachraf.typeson.domain.ObjectInfo;
 import io.github.achachraf.typeson.domain.SingleObjectInfo;
-import io.github.achachraf.typeson.interlay.ObjectInfoService;
-import io.github.achachraf.typeson.mock.*;
+import io.github.achachraf.typeson.interlay.mock.*;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

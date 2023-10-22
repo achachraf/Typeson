@@ -10,4 +10,7 @@ public class TypesonException extends RuntimeException{
         super(message, cause);
     }
 
+    public TypesonException(Throwable cause) {
+        super(cause);
+    }
 }

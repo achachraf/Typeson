@@ -7,7 +7,7 @@ import io.github.achachraf.typeson.aplication.ConfigProvider;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ConfigProviderMapImpl implements ConfigProvider {
+public class ConfigProviderMap implements ConfigProvider {
 
     private final Map<ConfigFeature, Boolean> configMap = initConfigMap();
 
@@ -19,7 +19,7 @@ public class ConfigProviderMapImpl implements ConfigProvider {
         return false;
     }
 
-    public ConfigProviderMapImpl addProperty(ConfigFeature feature, boolean value){
+    public ConfigProviderMap setProperty(ConfigFeature feature, boolean value){
         configMap.put(feature, value);
         return this;
     }
