@@ -4,7 +4,7 @@
 
     <groupId>io.github.achachraf</groupId>
     <artifactId>typeson</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.1-SNAPSHOT</version>
 
     <name>Typeson</name>
     <description>Typeson is a Java library that extends Jackson to support dynamic typing and polymorphism</description>
@@ -31,7 +31,7 @@
         <url>https://github.com/achachraf/Typeson</url>
         <connection>scm:git:ssh://git@github.com/achachraf/Typeson.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/achachraf/Typeson.git</developerConnection>
-        <tag>1.0.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
 
