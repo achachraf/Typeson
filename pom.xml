@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>org.ach</groupId>
+    <groupId>com.ach</groupId>
     <artifactId>typeson</artifactId>
     <version>1.0-SNAPSHOT</version>
 
@@ -16,9 +16,25 @@
         <jackson.version>2.15.2</jackson.version>
         <classgraph.version>4.8.161</classgraph.version>
         <org.slf4j.version>2.0.7</org.slf4j.version>
+        <pitest.version>1.15.1</pitest.version>
     </properties>
 
-
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.pitest</groupId>
+                <artifactId>pitest-maven</artifactId>
+                <version>1.15.1</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.pitest</groupId>
+                        <artifactId>pitest-junit5-plugin</artifactId>
+                        <version>1.0.0</version>
+                    </dependency>
+                </dependencies>
+            </plugin>
+        </plugins>
+    </build>
 
 
     <dependencies>
@@ -42,7 +58,6 @@
             <artifactId>slf4j-reload4j</artifactId>
             <version>${org.slf4j.version}</version>
         </dependency>
-
 
         <dependency>
             <groupId>org.junit.jupiter</groupId>
