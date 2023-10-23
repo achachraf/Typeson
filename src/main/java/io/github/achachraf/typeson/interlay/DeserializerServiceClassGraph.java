@@ -166,11 +166,6 @@ public class DeserializerServiceClassGraph implements DeserializeService {
                 ArrayNode arrayNode = (ArrayNode) fieldNode;
                 if (arrayNode.size() > 0) {
                     if(Collection.class.isAssignableFrom(fieldType)){
-                        System.out.println("field: " +fieldName);
-                        System.out.println("method: "+method);
-                        System.out.println("Method class: "+method.getDeclaringClass());
-                        System.out.println("containerType: "+method.getParameters()[0].getParameterizedType());
-                        System.out.println("containerType class: "+method.getParameters()[0].getParameterizedType().getClass());
                         ParameterizedType containerParameterizedType = (ParameterizedType) method.getParameters()[0].getParameterizedType();
                         Collection<?> collection = mapJavaCollection(arrayNode, containerParameterizedType);
                         method.invoke(object, collection);

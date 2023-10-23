@@ -586,14 +586,7 @@ public class DeserializerServiceClassGraphTest {
 
     }
 
-    @Test
-    public void testDeserializeDifferentTypes() throws JsonProcessingException {
-        String json = "{\"name\":\"shape1\"}";
-        Figure figure = deserializerService.deserialize(json, Figure.class);
-        System.out.println(figure);
-        Figure figure1 = new ObjectMapper().readValue(json, Figure.class);
-        System.out.println(figure1);
-    }
+
 
     @Test
     public void testJsonIgnore(){
@@ -641,7 +634,17 @@ public class DeserializerServiceClassGraphTest {
     public void testSerializeClassImplementGeneric(){
         String json = "{\"shapes\":[{\"name\":\"shape11\", \"radius\":10, \"type\":\"circle\"}],\"price\":55, \"strings\":[\"aa\",\"bb\"], \"type\":\"subArt\"}";
         Art art = deserializerService.deserialize(json, Art.class);
-        System.out.println(art);
+        assertInstanceOf(SubArt.class, art);
+        SubArt subArt = (SubArt) art;
+        assertEquals(subArt.getPrice(), 55);
+        assertEquals(subArt.getShapes().size(), 1);
+        assertEquals(subArt.getShapes().get(0).getName(), "shape11");
+        assertInstanceOf(Circle.class, subArt.getShapes().get(0));
+        Circle circle = (Circle) subArt.getShapes().get(0);
+        assertEquals(circle.getRadius(), 10);
+        assertEquals(subArt.getStrings().size(), 2);
+        assertEquals(subArt.getStrings().get(0), "aa");
+        assertEquals(subArt.getStrings().get(1), "bb");
     }
 
 
