@@ -10,6 +10,8 @@ public interface TypingService {
 
     boolean isValue(Class<?> type);
 
+    boolean isListOfValues(Object object);
+
     boolean isArray(Class<?> type);
 
     boolean isNumeric(Class<?> clazz);

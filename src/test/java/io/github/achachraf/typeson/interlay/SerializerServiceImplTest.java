@@ -24,7 +24,7 @@ public class SerializerServiceImplTest {
                 .setName("circleAndRectangle")
                 .setCircle(new Circle("circle", 10))
                 .setRectangle(new Rectangle("rectangle", 10, 20));
-                ;
+        ;
         String json = serializerService.serialize(circleAndRectangle);
         assertEquals("{\"name\":\"circleAndRectangle\",\"circle\":{\"name\":\"circle\",\"radius\":10,\"type\":\"circle\"},\"rectangle\":{\"name\":\"rectangle\",\"width\":10,\"height\":20,\"type\":\"rectangle\"},\"type\":\"circleAndRectangle\"}", json);
     }
@@ -161,7 +161,9 @@ public class SerializerServiceImplTest {
     public void testJsonIgnore(){
         MockForJsonIgnore mockForJsonIgnore = new MockForJsonIgnore()
                 .setIgnored("ignored")
-                .setNotIgnored("notIgnored");
+                .setNotIgnored("notIgnored")
+                .setIgnoredShape(new Shape("ignoredShape"))
+                ;
         String json = serializerService.serialize(mockForJsonIgnore);
         assertEquals("{\"notIgnored\":\"notIgnored\"}", json);
     }
@@ -174,4 +176,39 @@ public class SerializerServiceImplTest {
         String json = serializerService.serialize(mockForJsonProperty);
         assertEquals("{\"diff_name\":\"diffName\",\"manyAliases\":\"manyAliases\"}", json);
     }
+
+    @Test
+    public void testSerializeArrayOfValues() {
+        List<String> list = List.of("a", "b", "c");
+        String json = serializerService.serialize(list);
+        assertEquals("[\"a\",\"b\",\"c\"]", json);
+    }
+
+
+    @Test
+    public void testSerializeCompositeArray(){
+        CompositeArray compositeArray = new CompositeArray()
+                .setName("compositeArray")
+                .setShapes(new Shape[]{
+                        new Circle("circle", 10),
+                        new Rectangle("rectangle", 10, 20)
+                });
+        String json = serializerService.serialize(compositeArray);
+        assertEquals("{\"shapes\":[{\"name\":\"circle\",\"radius\":10,\"type\":\"circle\"},{\"name\":\"rectangle\",\"width\":10,\"height\":20,\"type\":\"rectangle\"}],\"name\":\"compositeArray\"}", json);
+    }
+
+    @Test
+    public void testSerializeArrayPrimitives(){
+        PrimitivesHolder primitivesHolder = new PrimitivesHolder()
+                .setInts(new int[]{1, 2, 3})
+                .setIntegers(new Integer[]{1, 2, 3})
+                .setBytes("abc".getBytes())
+                .setBytesObjects(new Byte[]{1, 2, 3})
+                .setStrings(new String[]{"a", "b", "c"})
+                ;
+        String json = serializerService.serialize(primitivesHolder);
+        assertEquals("{\"ints\":[1,2,3],\"integers\":[1,2,3],\"strings\":[\"a\",\"b\",\"c\"],\"bytes\":\"YWJj\",\"bytesObjects\":[1,2,3]}", json);
+
+    }
+
 }

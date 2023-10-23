@@ -6,6 +6,7 @@ public class CompositeArray {
 
     private String name;
 
+
     public Shape[] getShapes() {
         return shapes;
     }

@@ -8,6 +8,8 @@ public class MockForJsonIgnore {
 
     private String ignored;
 
+    private Shape ignoredShape;
+
 
 
     public String getNotIgnored() {
@@ -18,16 +20,24 @@ public class MockForJsonIgnore {
         this.notIgnored = notIgnored;
         return this;
     }
-
+    @JsonIgnore
     public String getIgnored() {
         return ignored;
     }
 
-    @JsonIgnore
+
     public MockForJsonIgnore setIgnored(String ignored) {
         this.ignored = ignored;
         return this;
     }
 
+    @JsonIgnore
+    public Shape getIgnoredShape() {
+        return ignoredShape;
+    }
 
+    public MockForJsonIgnore setIgnoredShape(Shape ignoredShape) {
+        this.ignoredShape = ignoredShape;
+        return this;
+    }
 }

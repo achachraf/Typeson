@@ -580,9 +580,9 @@ public class DeserializerServiceClassGraphTest {
 
     @Test
     public void testDeserializeIncompatibleType2()  {
-        String json = "{\"type\":\"circle\",\"name\":\"circle\",\"radius\":\"10\"}";
+        String json = "{\"type\":\"circle\",\"name\":\"circle\",\"radius\":\"{}\"}";
         Throwable throwable = assertThrows(UnexpectedFieldException.class, () -> deserializerService.deserialize(json, Shape.class));
-        assertEquals("Field radius expected to be a NUMBER node, found STRING node: \"10\"", throwable.getMessage());
+        assertEquals("Field radius expected to be a NUMBER node, found STRING node: \"{}\"", throwable.getMessage());
 
     }
 
@@ -605,11 +605,11 @@ public class DeserializerServiceClassGraphTest {
     }
 
     @Test
-    public void testJsonIgnoreFilled(){
+    public void testJsonIgnoreFilled() {
         String json = "{\"notIgnored\":\"aa\", \"ignored\":\"bb\"}";
-        MockForJsonIgnore shape = deserializerService.deserialize(json, MockForJsonIgnore.class);
-        assertEquals(shape.getNotIgnored(), "aa");
-        assertNull(shape.getIgnored());
+        MockForJsonIgnore mock = deserializerService.deserialize(json, MockForJsonIgnore.class);
+        assertEquals(mock.getNotIgnored(), "aa");
+        assertNull(mock.getIgnored());
     }
 
     @Test
@@ -636,6 +636,13 @@ public class DeserializerServiceClassGraphTest {
         assertEquals("Type cannot be a Collection, use TypeReference instead", throwable.getMessage());
     }
 
+
+    @Test
+    public void testSerializeClassImplementGeneric(){
+        String json = "{\"shapes\":[{\"name\":\"shape11\", \"radius\":10, \"type\":\"circle\"}],\"price\":55, \"strings\":[\"aa\",\"bb\"], \"type\":\"subArt\"}";
+        Art art = deserializerService.deserialize(json, Art.class);
+        System.out.println(art);
+    }
 
 
 
