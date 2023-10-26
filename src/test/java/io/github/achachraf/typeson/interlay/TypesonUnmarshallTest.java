@@ -3,7 +3,6 @@ package io.github.achachraf.typeson.interlay;
 import com.fasterxml.jackson.core.type.TypeReference;
 import io.github.achachraf.typeson.TypesonException;
 import io.github.achachraf.typeson.aplication.DeserializationException;
-import io.github.achachraf.typeson.domain.ElementType;
 import io.github.achachraf.typeson.interlay.mock.*;
 import org.junit.jupiter.api.Test;
 

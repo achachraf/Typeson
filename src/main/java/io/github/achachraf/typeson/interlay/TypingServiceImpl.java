@@ -5,10 +5,7 @@ import io.github.achachraf.typeson.aplication.TypingException;
 import io.github.achachraf.typeson.aplication.TypingService;
 import org.slf4j.Logger;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Modifier;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.util.*;
 
 public class TypingServiceImpl implements TypingService {
@@ -28,6 +25,22 @@ public class TypingServiceImpl implements TypingService {
                 type.isAssignableFrom(Short.class) ||
                 type.isAssignableFrom(Void.class) ||
                 type.isAssignableFrom(Byte.class);
+    }
+
+    @Override
+    public boolean isListOfValues(Object object) {
+        if(object instanceof Collection<?> collection){
+            return !collection.isEmpty() && isValue(collection.iterator().next().getClass());
+        }
+        if(object.getClass().isArray()){
+            return Array.getLength(object) != 0 && isValue(object.getClass().getComponentType());
+        }
+        return false;
+    }
+
+
+    private boolean isArrayOfValues(Class<?> type) {
+        return type.isArray() && isValue(type.getComponentType());
     }
 
     @Override

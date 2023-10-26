@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import io.github.achachraf.typeson.aplication.SerializationException;
 import io.github.achachraf.typeson.aplication.SerializerService;
+import io.github.achachraf.typeson.aplication.TypingService;
 import io.github.achachraf.typeson.domain.ElementType;
 import io.github.achachraf.typeson.domain.ListObjectInfo;
 import io.github.achachraf.typeson.domain.ObjectInfo;
@@ -21,15 +22,20 @@ public class SerializerServiceImpl implements SerializerService {
 
     private final ObjectInfoService objectInfoService = new ObjectInfoService();
 
+    private final TypingService typingService = new TypingServiceImpl();
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public String serialize(Object object){
         Objects.requireNonNull(object, "object cannot be null");
-        ObjectInfo objectInfo = objectInfoService.getObjectInfo(object);
-        JsonNode jsonNode = objectMapper.valueToTree(object);
-        insertType(jsonNode, objectInfo);
         try {
+            if(typingService.isValue(object.getClass()) || typingService.isListOfValues(object)){
+                return objectMapper.writeValueAsString(object);
+            }
+            ObjectInfo objectInfo = objectInfoService.getObjectInfo(object);
+            JsonNode jsonNode = objectMapper.valueToTree(object);
+            insertType(jsonNode, objectInfo);
             return objectMapper.writeValueAsString(jsonNode);
         } catch (JsonProcessingException e) {
             throw new SerializationException("Error when serializing object: ",e);
@@ -67,7 +73,7 @@ public class SerializerServiceImpl implements SerializerService {
         }
         for (ObjectInfo objectInfo : singleObjectInfo.getSubObjects()){
             if(!objectNode.has(objectInfo.getName())){
-                throw new SerializationException("jsonNode does not contain field: "+objectInfo.getName());
+                throw new SerializationException("jsonNode "+objectNode+" does not contain field: "+objectInfo.getName());
             }
             JsonNode subJsonNode = objectNode.get(objectInfo.getName());
             insertAnyType(objectInfo, subJsonNode);

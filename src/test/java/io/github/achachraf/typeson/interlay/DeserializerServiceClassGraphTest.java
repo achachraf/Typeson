@@ -580,20 +580,13 @@ public class DeserializerServiceClassGraphTest {
 
     @Test
     public void testDeserializeIncompatibleType2()  {
-        String json = "{\"type\":\"circle\",\"name\":\"circle\",\"radius\":\"10\"}";
+        String json = "{\"type\":\"circle\",\"name\":\"circle\",\"radius\":\"{}\"}";
         Throwable throwable = assertThrows(UnexpectedFieldException.class, () -> deserializerService.deserialize(json, Shape.class));
-        assertEquals("Field radius expected to be a NUMBER node, found STRING node: \"10\"", throwable.getMessage());
+        assertEquals("Field radius expected to be a NUMBER node, found STRING node: \"{}\"", throwable.getMessage());
 
     }
 
-    @Test
-    public void testDeserializeDifferentTypes() throws JsonProcessingException {
-        String json = "{\"name\":\"shape1\"}";
-        Figure figure = deserializerService.deserialize(json, Figure.class);
-        System.out.println(figure);
-        Figure figure1 = new ObjectMapper().readValue(json, Figure.class);
-        System.out.println(figure1);
-    }
+
 
     @Test
     public void testJsonIgnore(){
@@ -605,11 +598,11 @@ public class DeserializerServiceClassGraphTest {
     }
 
     @Test
-    public void testJsonIgnoreFilled(){
+    public void testJsonIgnoreFilled() {
         String json = "{\"notIgnored\":\"aa\", \"ignored\":\"bb\"}";
-        MockForJsonIgnore shape = deserializerService.deserialize(json, MockForJsonIgnore.class);
-        assertEquals(shape.getNotIgnored(), "aa");
-        assertNull(shape.getIgnored());
+        MockForJsonIgnore mock = deserializerService.deserialize(json, MockForJsonIgnore.class);
+        assertEquals(mock.getNotIgnored(), "aa");
+        assertNull(mock.getIgnored());
     }
 
     @Test
@@ -636,6 +629,23 @@ public class DeserializerServiceClassGraphTest {
         assertEquals("Type cannot be a Collection, use TypeReference instead", throwable.getMessage());
     }
 
+
+    @Test
+    public void testSerializeClassImplementGeneric(){
+        String json = "{\"shapes\":[{\"name\":\"shape11\", \"radius\":10, \"type\":\"circle\"}],\"price\":55, \"strings\":[\"aa\",\"bb\"], \"type\":\"subArt\"}";
+        Art art = deserializerService.deserialize(json, Art.class);
+        assertInstanceOf(SubArt.class, art);
+        SubArt subArt = (SubArt) art;
+        assertEquals(subArt.getPrice(), 55);
+        assertEquals(subArt.getShapes().size(), 1);
+        assertEquals(subArt.getShapes().get(0).getName(), "shape11");
+        assertInstanceOf(Circle.class, subArt.getShapes().get(0));
+        Circle circle = (Circle) subArt.getShapes().get(0);
+        assertEquals(circle.getRadius(), 10);
+        assertEquals(subArt.getStrings().size(), 2);
+        assertEquals(subArt.getStrings().get(0), "aa");
+        assertEquals(subArt.getStrings().get(1), "bb");
+    }
 
 
 

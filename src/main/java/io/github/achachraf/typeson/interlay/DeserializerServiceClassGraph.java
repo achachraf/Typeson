@@ -18,7 +18,10 @@ import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.lang.reflect.*;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @SuppressWarnings({"rawtypes", "unchecked"})
@@ -207,7 +210,7 @@ public class DeserializerServiceClassGraph implements DeserializeService {
         }
         else if(jsonNodeType == JsonNodeType.ARRAY){
             if(elementType instanceof ParameterizedType subParameterizedType
-                && (Collection.class.isAssignableFrom((Class<?>) subParameterizedType.getRawType()))){
+                    && (Collection.class.isAssignableFrom((Class<?>) subParameterizedType.getRawType()))){
                 for(JsonNode jsonNode : arrayNode){
                     collection.add(mapJavaCollection((ArrayNode) jsonNode, subParameterizedType));
                 }
@@ -221,6 +224,15 @@ public class DeserializerServiceClassGraph implements DeserializeService {
             else{
                 throw new IllegalStateException("actualParameterizedType is not Collection or Array");
             }
+        }
+        else if(arrayNode.get(0).isValueNode()){
+            int i = 0;
+            for (JsonNode jsonNode : arrayNode) {
+                ValueNode valueNode = (ValueNode) jsonNode;
+                assertValueNodeType(valueNode, (Class<?>) elementType, "element "+i+" of array "+arrayNode);
+                collection.add(getFieldNodeValue(valueNode, (Class<?>) elementType));
+            }
+
         }
 
         else{
@@ -283,31 +295,54 @@ public class DeserializerServiceClassGraph implements DeserializeService {
     }
 
 
-    private Map<String, Method> extractSetters(Class<?> type){
-        if(!propertiesMap.containsKey(type)){
+    private Map<String, Method> extractSetters(Class<?> type) {
+        if (!propertiesMap.containsKey(type)) {
             Map<String, Method> properties = new HashMap<>();
-            for(Method method : type.getMethods()){
+            List<Method> methods = preferSubClassMethods(type);
+            for(Method method : methods){
                 if(method.getName().startsWith("set") && method.getParameterCount() == 1){
                     List<String> propertyNames = new ArrayList<>();
-                    if(method.isAnnotationPresent(JsonProperty.class)){
+                    if (method.isAnnotationPresent(JsonProperty.class)) {
                         JsonProperty jsonProperty = method.getAnnotation(JsonProperty.class);
                         propertyNames.add(jsonProperty.value());
                     }
-                    if(method.isAnnotationPresent(JsonAlias.class)){
+                    if (method.isAnnotationPresent(JsonAlias.class)) {
                         JsonAlias jsonAlias = method.getAnnotation(JsonAlias.class);
                         propertyNames.addAll(Arrays.asList(jsonAlias.value()));
+                    } else {
+                        propertyNames.add(method.getName().substring(3, 4).toLowerCase() + method.getName().substring(4));
                     }
-                    else{
-                        propertyNames.add(method.getName().substring(3,4).toLowerCase()+method.getName().substring(4));
-                    }
-                    for(String propertyName : propertyNames){
+                    for (String propertyName : propertyNames) {
                         properties.put(propertyName, method);
                     }
                 }
             }
+
             propertiesMap.put(type, properties);
         }
         return propertiesMap.get(type);
+    }
+
+    private List<Method> preferSubClassMethods(Class<?> type){
+        Map<String, Method> methodMap = new HashMap<>();
+        for(Method method : type.getMethods()){
+            if(methodMap.containsKey(method.getName())){
+                methodMap.put(method.getName(), keepYoungest(method, methodMap.get(method.getName())));
+            }
+            else{
+                methodMap.put(method.getName(), method);
+            }
+        }
+        return new ArrayList<>(methodMap.values());
+    }
+
+    private Method keepYoungest(Method method1, Method method2){
+        if(method1.getReturnType().isAssignableFrom(method2.getReturnType())){
+            return method2;
+        }
+        else{
+            return method1;
+        }
     }
 
     private Class<?> getTypeClass(String typeName, Class<?> type){
@@ -357,11 +392,21 @@ public class DeserializerServiceClassGraph implements DeserializeService {
         if(type == Byte.class || type == byte.class){
             return Base64.getDecoder().decode(valueNode.textValue());
         }
+        if(type == Byte[].class || type == byte[].class){
+            return Base64.getDecoder().decode(valueNode.textValue());
+        }
         if(type == Character.class || type == char.class){
             if (valueNode.textValue().length() != 1) {
                 throw new TypingException("source field is not char: " + valueNode.textValue());
             }
             return valueNode.textValue().charAt(0);
+        }
+        if(type == Date.class || type == LocalDate.class || type == LocalDateTime.class || Enum.class.isAssignableFrom(type)){
+            try {
+                return objectMapper.readValue(valueNode.traverse(), type);
+            } catch (IOException e) {
+                throw new TypingException("Could not parse date: ", e);
+            }
         }
         if(type == Collection.class ){
             throw new TypingException("Collection type not supported");
@@ -381,13 +426,40 @@ public class DeserializerServiceClassGraph implements DeserializeService {
         String expectedType = typingService.isValue(type) ? "value" : (typingService.isArray(type) ? "array" : "object");
         String actualType = fieldNode.isValueNode() ? "value" : (fieldNode.isArray() ? "array" : "object");
         if(!expectedType.equals(actualType)){
+            if(fieldNode.isValueNode() && fieldNode.getNodeType().equals(JsonNodeType.STRING) && isParsableAs(fieldNode.asText(), type)){
+                return;
+            }
             throw new UnexpectedFieldException("Field "+fieldName+" expected to be a "+expectedType+" node, found "+actualType+" node: "+fieldNode);
         }
     }
 
-    private boolean isIgnored(Method method){
-        return method.isAnnotationPresent(JsonIgnore.class);
+    private boolean isParsableAs(String text, Class<?> type){
+        try {
+            objectMapper.readValue("\""+text+"\"", type);
+            return true;
+        }
+        catch (IOException e){
+            return false;
+        }
     }
+
+    private boolean isIgnored(Method method){
+        if(method.isAnnotationPresent(JsonIgnore.class)){
+            return true;
+        }
+        Method getter = getGetterFromSetter(method);
+        return getter != null && getter.isAnnotationPresent(JsonIgnore.class);
+    }
+
+    private Method getGetterFromSetter(Method setter){
+        String getterName = "get"+setter.getName().substring(3);
+        try {
+            return setter.getDeclaringClass().getMethod(getterName);
+        } catch (NoSuchMethodException e) {
+            return null;
+        }
+    }
+
 
     private void assertValueNodeType(ValueNode valueNode, Class<?> type, String fieldName){
         if(valueNode.isNull()){
@@ -409,6 +481,9 @@ public class DeserializerServiceClassGraph implements DeserializeService {
             expectedType = JsonNodeType.NULL;
         }
         if(valueNode.getNodeType() != expectedType){
+            if(valueNode.getNodeType().equals(JsonNodeType.STRING) && isParsableAs(valueNode.asText(), type)){
+                return;
+            }
             throw new UnexpectedFieldException("Field "+fieldName+" expected to be a "+expectedType+" node, found "+valueNode.getNodeType()+" node: "+valueNode);
         }
 

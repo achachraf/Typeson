@@ -1,16 +1,22 @@
 package io.github.achachraf.typeson.interlay;
 
-import io.github.achachraf.typeson.TypesonException;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.github.achachraf.typeson.domain.ListObjectInfo;
 import io.github.achachraf.typeson.domain.ObjectInfo;
 import io.github.achachraf.typeson.domain.ObjectInfoAccessor;
 import io.github.achachraf.typeson.domain.SingleObjectInfo;
+import org.slf4j.Logger;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Method;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.*;
 
 public class ObjectInfoService {
+
+    private static final Logger logger = org.slf4j.LoggerFactory.getLogger(ObjectInfoService.class);
 
     private static final String ROOT_NAME = "$ROOT_OBJECT$";
 
@@ -36,6 +42,7 @@ public class ObjectInfoService {
         List<ObjectInfoAccessor> getterObjectInfoAccessors = getAccessors(object, getters, visitedObjects);
         List<ObjectInfoAccessor> setterObjectInfoAccessors = getterObjectInfoAccessors.stream()
                 .map(accessor -> getSetterAccessor(accessor, type))
+                .filter(Objects::nonNull)
                 .toList();
         return new SingleObjectInfo()
                 .setName(name)
@@ -89,7 +96,8 @@ public class ObjectInfoService {
     private List<Method> getNotIgnoredGetters(Class<?> type) {
         return Arrays.stream(type.getMethods())
                 .filter(method -> method.getName().startsWith("get")
-                        && !method.getName().equals("getClass"))
+                        && !method.getName().equals("getClass")
+                        && !method.isAnnotationPresent(JsonIgnore.class))
                 .toList();
     }
 
@@ -106,16 +114,16 @@ public class ObjectInfoService {
                     .setMethod(type.getMethod(setterName, getterObjectInfoAccessor.getMethod().getReturnType()))
                     .setObjectInfo(getterObjectInfoAccessor.getObjectInfo());
         } catch (NoSuchMethodException e) {
-            throw new TypesonException("Could not find setter: " + setterName, e);
+            return null;
         }
     }
     private List<ObjectInfoAccessor> getAccessors(Object object, List<Method> getters, Set<Object> visitedObjects) {
         List<ObjectInfoAccessor> result = new ArrayList<>();
         for (Method getter : getters) {
-            ObjectInfoAccessor objectInfoAccessor = new ObjectInfoAccessor()
-                    .setMethod(getter);
-            result.add(objectInfoAccessor);
             if(isComposite(getter.getReturnType())){
+                ObjectInfoAccessor objectInfoAccessor = new ObjectInfoAccessor()
+                        .setMethod(getter);
+
                 Object subObject = getObject(object, getter);
                 if(subObject != null){
                     if(visitedObjects.contains(subObject)){
@@ -123,11 +131,25 @@ public class ObjectInfoService {
                     }
                     visitedObjects.add(subObject);
                     if(subObject instanceof Collection<?> collection){
+                        if(collection.isEmpty() || !isComposite(collection.iterator().next().getClass())){
+                            continue;
+                        }
                         objectInfoAccessor.setObjectInfo(getObjectInfoForCollection(collection, getNameFromGetterOrAnnotation(getter), getter.getReturnType()));
+                        result.add(objectInfoAccessor);
+                        continue;
+                    }
+                    if(subObject.getClass().isArray()){
+                        if(Array.getLength(subObject) == 0 || !isComposite(subObject.getClass().getComponentType())){
+                            continue;
+                        }
+                        objectInfoAccessor.setObjectInfo(getObjectInfoForArray((Object[])subObject, getNameFromGetterOrAnnotation(getter), getter.getReturnType()));
+                        result.add(objectInfoAccessor);
                         continue;
                     }
                     objectInfoAccessor.setObjectInfo(getObjectInfoForObject(subObject, visitedObjects, getNameFromGetterOrAnnotation(getter)));
+                    result.add(objectInfoAccessor);
                 }
+
             }
         }
         return result;
@@ -137,6 +159,7 @@ public class ObjectInfoService {
         try {
             return getter.invoke(object);
         } catch (Exception e) {
+            logger.error("Error while invoking getter " + getter.getName() + " on object " + object.getClass().getName());
             throw new RuntimeException(e);
         }
     }
@@ -152,7 +175,14 @@ public class ObjectInfoService {
                 type.isAssignableFrom(Float.class) ||
                 type.isAssignableFrom(Short.class) ||
                 type.isAssignableFrom(Void.class) ||
-                type.isAssignableFrom(Byte.class));
+                type.isAssignableFrom(Byte.class) ||
+                type.isAssignableFrom(Date.class) ||
+                type.isAssignableFrom(LocalDate.class) ||
+                type.isAssignableFrom(LocalDateTime.class) ||
+                type.isAssignableFrom(LocalTime.class) ||
+                Enum.class.isAssignableFrom(type)
+
+        );
     }
 
     private String getNameFromGetterOrAnnotation(Method getter) {
