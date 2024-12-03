@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.node.ValueNode;
 import io.github.achachraf.typeson.aplication.*;
 import io.github.achachraf.typeson.domain.ElementType;
 import io.github.classgraph.ClassGraph;
+import io.github.classgraph.ClassInfo;
 import io.github.classgraph.ClassInfoList;
 import io.github.classgraph.ScanResult;
 import org.slf4j.Logger;
@@ -289,7 +290,9 @@ public class DeserializerServiceClassGraph implements DeserializeService {
     }
 
     private void scanClassPath(){
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         scanResult = new ClassGraph()
+                .overrideClassLoaders(classLoader)
                 .enableAllInfo()
                 .scan();
     }
@@ -354,11 +357,11 @@ public class DeserializerServiceClassGraph implements DeserializeService {
         // add class itself
         classInfoList.add(scanResult.getClassInfo(type.getName()));
 
-        for(Class<?> aClass : classInfoList.loadClasses()) {
-            if(aClass.isAnnotationPresent(ElementType.class)){
-                ElementType elementType = aClass.getAnnotation(ElementType.class);
-                if(elementType.name().equals(typeName)){
-                    return aClass;
+        for (ClassInfo classInfo : classInfoList) {
+            if (!classInfo.getAnnotationInfo().getRepeatable(ElementType.class).isEmpty()) {
+                String elementTypeName = (String) classInfo.getAnnotationInfo().getRepeatable(ElementType.class).get(0).getParameterValues().getValue("name");
+                if (elementTypeName.equals(typeName)) {
+                    return classInfo.loadClass();
                 }
             }
         }
