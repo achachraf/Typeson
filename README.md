@@ -1,5 +1,5 @@
 # Typeson
-![Version](https://img.shields.io/badge/Version-1.0.1-green.svg)
+![Version](https://img.shields.io/badge/Version-1.0.2-green.svg)
 ![Java](https://img.shields.io/badge/Java-17-blue.svg)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
