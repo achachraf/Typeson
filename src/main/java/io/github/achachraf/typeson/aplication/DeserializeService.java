@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Map;
 
 @SuppressWarnings({"rawtypes"})
 public interface DeserializeService {
@@ -58,4 +59,43 @@ public interface DeserializeService {
      * @see #deserializeArray(String, TypeReference) for more possible exceptions
      */
     <T> ArrayList<T> deserializeArray(String source, Class<T> type);
+
+    /**
+     * Deserialize a json string to a map of type K, V
+     * @param source json string
+     * @param keyType type of the key
+     * @param valueType type of the value
+     * @return a map of type K, V
+     * @param <K> type of the key
+     * @param <V> type of the value
+     * @throws IllegalArgumentException if:
+     * <ul>
+     *     <li>The source is not a valid json object string</li>
+     *     <li>A field is a generic type</li>
+     *     <li>Unsupported JSON type is provided (e.g. value)</li>
+     * </ul>
+     * @throws TypingException if a type violation occurs
+     * @throws UnexpectedFieldException if a field is not found in the provided type
+     * @throws DeserializationException if the deserialization fails
+     */
+    <K, V> Map<K, V> deserializeMap(String source, Class<K> keyType, Class<V> valueType);
+
+    /**
+     * Deserialize a json string to a map of type K, V
+     * @param source json string
+     * @param typeReference type of the map to deserialize
+     * @return a map of type K, V
+     * @param <K> type of the key
+     * @param <V> type of the value
+     * @throws IllegalArgumentException if:
+     * <ul>
+     *     <li>The source is not a valid json object string</li>
+     *     <li>A field is a generic type</li>
+     *     <li>Unsupported JSON type is provided (e.g. value)</li>
+     * </ul>
+     * @throws TypingException if a type violation occurs
+     * @throws UnexpectedFieldException if a field is not found in the provided type
+     * @throws DeserializationException if the deserialization fails
+     */
+    <K, V> Map<K, V> deserializeMapWithTypeReference(String source, TypeReference<Map<K, V>> typeReference);
 }

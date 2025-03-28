@@ -7,6 +7,7 @@ import io.github.achachraf.typeson.aplication.SerializerService;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Typeson is the main class of the library, used to marshall and unmarshall objects.
@@ -92,6 +93,43 @@ public class Typeson {
     }
 
     /**
+     * Unmarshall a json string to a map
+     * @param data json string to unmarshall
+     * @param keyType class of the key to unmarshall
+     * @param valueType class of the value to unmarshall
+     * @return the unmarshalled map
+     * @param <K> type of the key to unmarshall
+     * @param <V> type of the value to unmarshall
+     * @throws TypesonException @see {@link DeserializeService#deserializeMap(String, Class, Class)}
+     */
+    public <K, V> Map<K, V> unmarshallMap(String data, Class<K> keyType, Class<V> valueType) {
+        try {
+            return deserializeService.deserializeMap(data, keyType, valueType);
+        }
+        catch (Exception e) {
+            throw new TypesonException("Error while unmarshalling Map: ",e);
+        }
+    }
+
+    /**
+     * Unmarshall a json string to a map
+     * @param data json string to unmarshall
+     * @param typeReference type reference of the map to unmarshall
+     * @return the unmarshalled map
+     * @param <K> type of the key to unmarshall
+     * @param <V> type of the value to unmarshall
+     * @throws TypesonException @see {@link DeserializeService#deserializeMapWithTypeReference(String, TypeReference)}
+     */
+    public <K, V> Map<K, V> unmarshallMap(String data, TypeReference<Map<K, V>> typeReference) {
+        try {
+            return deserializeService.deserializeMapWithTypeReference(data, typeReference);
+        }
+        catch (Exception e) {
+            throw new TypesonException("Error while unmarshalling Map: ",e);
+        }
+    }
+
+    /**
      * Marshall an object to a json string
      * @param object object to marshall
      * @return the marshalled json string
@@ -106,6 +144,19 @@ public class Typeson {
         }
     }
 
-
+    /**
+     * Marshall a map to a json string
+     * @param map map to marshall
+     * @return the marshalled json string
+     * @throws TypesonException @see {@link SerializerService#serializeMap(Map)}
+     */
+    public String marshallMap(Map<?, ?> map) {
+        try {
+            return serializerService.serializeMap(map);
+        }
+        catch (Exception e) {
+            throw new TypesonException("Error while marshalling Map: ",e);
+        }
+    }
 
 }

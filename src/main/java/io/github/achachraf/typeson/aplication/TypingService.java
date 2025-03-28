@@ -19,4 +19,6 @@ public interface TypingService {
     <T> TypeReference<ArrayList<T>> getArrayListTypeReference(Class<T> clazz);
 
     Collection<Object> instantiateContainer(Class<? extends Collection> containerClass);
+
+    boolean isMap(Class<?> type);
 }

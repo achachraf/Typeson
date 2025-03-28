@@ -1,5 +1,7 @@
 package io.github.achachraf.typeson.aplication;
 
+import java.util.Map;
+
 public interface SerializerService {
 
     /**
@@ -23,4 +25,23 @@ public interface SerializerService {
      */
     String serialize(Object object);
 
+    /**
+     * Serialize a map to a string and inject the type information<br>
+     * The type information is injected as a field based on the annotation {@link io.github.achachraf.typeson.domain.ElementType}
+     * @param map the map to serialize
+     * @return the serialized map as json string
+     * @throws SerializationException if
+     * <ul>
+     *     <li>The map cannot be serialized</li>
+     *     <li>Type name is not specified in ElementType</li>
+     *     <li>Type field not present in JSON</li>
+     *     <li>Unexpected error during serialization</li>
+     * </ul>
+     * @throws IllegalArgumentException if
+     * <ul>
+     *     <li>Map is null</li>
+     *     <li>Unexpected ObjectInfo Service error</li>
+     * </ul>
+     */
+    String serializeMap(Map<?, ?> map);
 }

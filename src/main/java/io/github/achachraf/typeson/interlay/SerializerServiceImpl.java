@@ -14,6 +14,7 @@ import io.github.achachraf.typeson.domain.ObjectInfo;
 import io.github.achachraf.typeson.domain.SingleObjectInfo;
 import org.slf4j.Logger;
 
+import java.util.Map;
 import java.util.Objects;
 
 public class SerializerServiceImpl implements SerializerService {
@@ -39,6 +40,17 @@ public class SerializerServiceImpl implements SerializerService {
             return objectMapper.writeValueAsString(jsonNode);
         } catch (JsonProcessingException e) {
             throw new SerializationException("Error when serializing object: ",e);
+        }
+    }
+
+    @Override
+    public String serializeMap(Map<?, ?> map) {
+        Objects.requireNonNull(map, "map cannot be null");
+        try {
+            JsonNode jsonNode = objectMapper.valueToTree(map);
+            return objectMapper.writeValueAsString(jsonNode);
+        } catch (JsonProcessingException e) {
+            throw new SerializationException("Error when serializing map: ", e);
         }
     }
 

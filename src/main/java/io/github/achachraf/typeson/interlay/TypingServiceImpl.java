@@ -90,6 +90,11 @@ public class TypingServiceImpl implements TypingService {
 
     }
 
+    @Override
+    public boolean isMap(Class<?> type) {
+        return Map.class.isAssignableFrom(type);
+    }
+
     private static class ArrayListTypeReference<T> extends TypeReference<ArrayList<T>> {
 
         private final Type type;

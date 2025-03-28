@@ -94,6 +94,48 @@ public class DeserializerServiceClassGraph implements DeserializeService {
         return deserializeArray(source, typingService.getArrayListTypeReference(type));
     }
 
+    @Override
+    public <K, V> Map<K, V> deserializeMap(String source, Class<K> keyType, Class<V> valueType) {
+        Objects.requireNonNull(keyType, "Key type cannot be null");
+        Objects.requireNonNull(valueType, "Value type cannot be null");
+        Objects.requireNonNull(source, "Source cannot be null");
+        try {
+            JsonNode treeNode = objectMapper.readTree(source);
+            if(!treeNode.isObject()){
+                throw new IllegalArgumentException("Source is not Json Object: "+source);
+            }
+            return mapMap(treeNode, keyType, valueType);
+        } catch (JsonProcessingException e) {
+            throw new DeserializationException("Error when processing Json Object: "+source, e);
+        }
+    }
+
+    @Override
+    public <K, V> Map<K, V> deserializeMapWithTypeReference(String source, TypeReference<Map<K, V>> typeReference) {
+        Objects.requireNonNull(typeReference, "TypeReference cannot be null");
+        Objects.requireNonNull(source, "Source cannot be null");
+        Type mapType = typeReference.getType();
+        if(mapType instanceof ParameterizedType mapParameterizedType){
+            if(mapParameterizedType.getActualTypeArguments().length == 2){
+                try {
+                    JsonNode treeNode = objectMapper.readTree(source);
+                    if(!treeNode.isObject()){
+                        throw new IllegalArgumentException("Source is not a Json Object: "+source);
+                    }
+                    return (Map<K, V>) mapMap(treeNode, mapParameterizedType);
+                } catch (JsonProcessingException e) {
+                    throw new DeserializationException("Error when processing Json Object: "+source, e);
+                }
+            }
+            else{
+                throw new IllegalArgumentException("Expected 2 generic types for map, found: "+mapParameterizedType.getActualTypeArguments().length);
+            }
+        }
+        else{
+            throw new IllegalArgumentException("Map not provided with generic type: "+mapType.getTypeName());
+        }
+    }
+
     private <T> T mapObject(JsonNode jsonNode, Class<?> type){
         if(type.getTypeParameters().length > 0){
             throw new IllegalArgumentException("Field " + type + " is a generic, and it is not supported yet");
@@ -241,6 +283,57 @@ public class DeserializerServiceClassGraph implements DeserializeService {
         }
 
         return collection;
+    }
+
+    private Map<Object, Object> mapMap(JsonNode jsonNode, Class<?> keyType, Class<?> valueType) {
+        Map<Object, Object> map = new HashMap<>();
+        jsonNode.fields().forEachRemaining(entry -> {
+            JsonNode keyNode = objectMapper.valueToTree(entry.getKey());
+            JsonNode valueNode = entry.getValue();
+            Object key = getFieldNodeValue((ValueNode) keyNode, keyType);
+            Object value = mapAnyType(valueNode, valueType);
+            map.put(key, value);
+        });
+        return map;
+    }
+
+    private Map<Object, Object> mapMap(JsonNode jsonNode, ParameterizedType mapParameterizedType) {
+        Map<Object, Object> map = new HashMap<>();
+        Type keyType = mapParameterizedType.getActualTypeArguments()[0];
+        Type valueType = mapParameterizedType.getActualTypeArguments()[1];
+        jsonNode.fields().forEachRemaining(entry -> {
+            JsonNode keyNode = objectMapper.valueToTree(entry.getKey());
+            JsonNode valueNode = entry.getValue();
+            Object key = getFieldNodeValue((ValueNode) keyNode, (Class<?>) keyType);
+            Object value = mapAnyType(valueNode, (Class<?>) valueType);
+            map.put(key, value);
+        });
+        return map;
+    }
+
+    private Object mapAnyType(JsonNode jsonNode, Class<?> type) {
+        if (jsonNode.isValueNode() && !jsonNode.isNull()) {
+            ValueNode valueNode = (ValueNode) jsonNode;
+            assertValueNodeType(valueNode, type, "value");
+            return getFieldNodeValue(valueNode, type);
+        } else if (jsonNode.isObject()) {
+            return mapObject(jsonNode, type);
+        } else if (jsonNode.isArray()) {
+            ArrayNode arrayNode = (ArrayNode) jsonNode;
+            if (arrayNode.size() > 0) {
+                if (Collection.class.isAssignableFrom(type)) {
+                    ParameterizedType containerParameterizedType = getParametrizedTypeContainer(type, List.class);
+                    return mapJavaCollection(arrayNode, containerParameterizedType);
+                } else if (type.isArray()) {
+                    Class<?> arrayElementType = type.getComponentType();
+                    return mapJavaCollection(arrayNode, getParametrizedTypeContainer(arrayElementType, List.class))
+                            .toArray((Object[]) java.lang.reflect.Array.newInstance(arrayElementType, arrayNode.size()));
+                } else {
+                    throw new IllegalArgumentException("containerType is not Collection or Array");
+                }
+            }
+        }
+        throw new IllegalArgumentException("Unsupported JSON node type: " + jsonNode.getNodeType());
     }
 
     private void checkUnknownProperties(JsonNode jsonNode, Map<String, Method> properties, String typeField, Class<?> typeClass){
