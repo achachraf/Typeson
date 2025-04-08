@@ -1,6 +1,7 @@
 package io.github.achachraf.typeson.interlay;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.achachraf.typeson.TypesonException;
 import io.github.achachraf.typeson.aplication.DeserializeService;
 import io.github.achachraf.typeson.aplication.SerializerService;
@@ -17,27 +18,26 @@ import java.util.List;
  */
 public class Typeson {
 
-    private final SerializerService serializerService = new SerializerServiceImpl();
+    private final SerializerService serializerService;
 
     private final DeserializeService deserializeService;
 
-
     /**
      * Default constructor
-     * Uses the default config provider {@link ConfigProviderMap}
+     * Uses the default ObjectMapper with all modules registered
      */
     public Typeson() {
-        this.deserializeService = new DeserializerServiceClassGraph(new ConfigProviderMap());
+        this(new ObjectMapper().findAndRegisterModules());
     }
 
     /**
-     * Constructor with custom config provider
-     * @param configProviderMap custom config provider
+     * Constructor with custom ObjectMapper
+     * @param objectMapper Underlying ObjectMapper to use for serialization or deserialization.
      */
-    public Typeson(ConfigProviderMap configProviderMap) {
-        this.deserializeService = new DeserializerServiceClassGraph(configProviderMap);
+    public Typeson(ObjectMapper objectMapper) {
+        this.deserializeService = new DeserializerServiceClassGraph(objectMapper);
+        this.serializerService = new SerializerServiceImpl(objectMapper);
     }
-
 
     /**
      * Unmarshall a json string to an object

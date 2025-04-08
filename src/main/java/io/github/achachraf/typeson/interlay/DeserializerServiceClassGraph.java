@@ -25,6 +25,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class DeserializerServiceClassGraph implements DeserializeService {
 
@@ -32,16 +35,14 @@ public class DeserializerServiceClassGraph implements DeserializeService {
 
     private static ScanResult scanResult;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
-
-    private final ConfigProvider configProvider;
+    private final ObjectMapper objectMapper;
 
     private final TypingService typingService = new TypingServiceImpl();
 
     private final Map<Class<?>, Map<String, Method>> propertiesMap = new HashMap<>();
 
-    public DeserializerServiceClassGraph(ConfigProvider configProvider) {
-        this.configProvider = configProvider;
+    public DeserializerServiceClassGraph(ObjectMapper objectMapper) {
+       this.objectMapper = objectMapper;
     }
 
     @Override
@@ -121,7 +122,7 @@ public class DeserializerServiceClassGraph implements DeserializeService {
         }
         Map<String, Method> setters = extractSetters(typeClass);
         setters.remove(typeField); // remove type field from setters
-        if(configProvider.getProperty(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)){
+        if(objectMapper.getDeserializationConfig().isEnabled(FAIL_ON_UNKNOWN_PROPERTIES)){
             checkUnknownProperties(jsonNode, setters, typeField, typeClass);
         }
         T object ;
@@ -138,7 +139,7 @@ public class DeserializerServiceClassGraph implements DeserializeService {
                 continue;
             }
             if(fieldNode == null){
-                if(configProvider.getProperty(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES)){
+                if(objectMapper.getDeserializationConfig().isEnabled(FAIL_ON_NULL_FOR_PRIMITIVES)){
                     throw new DeserializationException("Null value for primitive field: "+fieldName);
                 }
             }
