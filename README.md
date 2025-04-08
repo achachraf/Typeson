@@ -11,49 +11,52 @@ No time to read? next section is for you.
 ### Typeson vs. Jackson ?
 
 A simple polymorphic serialization example using Jackson would look like this:
+
 ```java
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "type")
 @JsonSubTypes({  // <-- This is what breaks the extensibility
-        @JsonSubTypes.Type(value = Dog.class, name = "dog"),
-        @JsonSubTypes.Type(value = Cat.class, name = "cat")
-}) 
+      @JsonSubTypes.Type(value = Dog.class, name = "dog"),
+      @JsonSubTypes.Type(value = Cat.class, name = "cat")
+})
 public class Animal {
-    private String name;
-    
-    // getters and setters
+   private String name;
+
+   // getters and setters
 }
 
 @JsonTypeName("dog")
 public class Dog extends Animal {
-    private String breed;
-    
-    // getters and setters
+   private String breed;
+
+   // getters and setters
 }
 
 @JsonTypeName("cat")
 public class Cat extends Animal {
-    private int lives;
-    
-    // getters and setters
+   private int lives;
+
+   // getters and setters
 }
 
 public class Main {
-    public static void main(String[] args) {
-        String json = "{\"type\":\"dog\",\"name\":\"Snoopy\",\"breed\":\"Beagle\"}";
-        ObjectMapper mapper = new ObjectMapper();
-        Animal animal = mapper.readValue(json, Animal.class);
-    }
+   public static void main(String[] args) {
+      String json = "{\"type\":\"dog\",\"name\":\"Snoopy\",\"breed\":\"Beagle\"}";
+      ObjectMapper mapper = new ObjectMapper();
+      Animal animal = mapper.readValue(json, Animal.class);
+   }
 }
 ```
 
 The problem with this approach is that it requires the base class to know about all its subtypes.
-This is not always possible, especially when the base class is part of a library and the subtypes are defined in a different library.
+This is not always possible, especially when the base class is part of a library and the subtypes
+are defined in a different library.
 
 Typeson solves this problem by using a different approach.
-With the capability of dynamically resolving the type of an object, Typeson can serialize and deserialize objects without the need for the base class to know about its subtypes.
+With the capability of dynamically resolving the type of an object, Typeson can serialize and
+deserialize objects without the need for the base class to know about its subtypes.
 
 ```java
 import io.github.achachraf.typeson.domain.ElementType;
@@ -61,31 +64,31 @@ import io.github.achachraf.typeson.interlay.Typeson;
 
 @ElementType(name = "animal", field = "type") // <-- This is what makes it extensible
 public class Animal {
-    private String name;
-    
-    // getters and setters
+   private String name;
+
+   // getters and setters
 }
 
 @ElementType("dog")
 public class Dog extends Animal {
-    private String breed;
-    
-    // getters and setters
+   private String breed;
+
+   // getters and setters
 }
 
 @ElementType("cat")
 public class Cat extends Animal {
-    private int lives;
-    
-    // getters and setters
+   private int lives;
+
+   // getters and setters
 }
 
 public class Main {
-    public static void main(String[] args) {
-        String json = "{\"type\":\"dog\",\"name\":\"Snoopy\",\"breed\":\"Beagle\"}";
-        Typeson typeson = new Typeson();
-        Animal animal = typeson.unmarshall(json, Animal.class);
-    }
+   public static void main(String[] args) {
+      String json = "{\"type\":\"dog\",\"name\":\"Snoopy\",\"breed\":\"Beagle\"}";
+      Typeson typeson = new Typeson();
+      Animal animal = typeson.unmarshall(json, Animal.class);
+   }
 }
 ```
 
@@ -95,11 +98,11 @@ You want to know more? keep reading.
 
 1. [Installation](#installation)
 2. [Usage](#usage)
-   1. [Serialization](#serialization)
-      1. [Simple Serialization](#simple-serialization)
-      2. [List Serialization](#list-serialization)
-      3. [Map Serialization](#map-serialization)
-      4. [Jackson Annotations](#jackson-annotations)
+    1. [Serialization](#serialization)
+        1. [Simple Serialization](#simple-serialization)
+        2. [List Serialization](#list-serialization)
+        3. [Map Serialization](#map-serialization)
+        4. [Jackson Annotations](#jackson-annotations)
     2. [Deserialization](#deserialization)
         1. [Simple Deserialization](#simple-deserialization)
         2. [List Deserialization](#list-deserialization)
@@ -120,16 +123,19 @@ You want to know more? keep reading.
 **Typeson** is available on Maven Central.
 
 ```xml
+
 <dependency>
-  <groupId>io.github.achachraf</groupId>
-  <artifactId>typeson</artifactId>
-  <version>LATEST</version> <!-- Replace LATEST with the latest version -->
+    <groupId>io.github.achachraf</groupId>
+    <artifactId>typeson</artifactId>
+    <version>LATEST</version> <!-- Replace LATEST with the latest version -->
 </dependency>
 ```
 
-To use the Jackson features (see next sections), you will need to add the jackson module as provided dependency.
+To use the Jackson features (see next sections), you will need to add the jackson module as provided
+dependency.
 
 ```xml
+
 <dependency>
     <groupId>com.fasterxml.jackson.core</groupId>
     <artifactId>jackson-databind</artifactId>
@@ -147,27 +153,28 @@ import io.github.achachraf.typeson.domain.ElementType;
 
 @ElementType(name = "anime", field = "type")
 public class Animal {
-    private String name;
-    
-    // getters and setters
+   private String name;
+
+   // getters and setters
 }
 
 @ElementType("dog")
 public class Dog extends Animal {
-    private String breed;
-    
-    // getters and setters
+   private String breed;
+
+   // getters and setters
 }
 
 @ElementType("cat")
 public class Cat extends Animal {
-    private int lives;
-    
-    // getters and setters
+   private int lives;
+
+   // getters and setters
 }
 ```
 
-> IMPORTANT: Typeson uses getters and setters to access the fields of the objects. If not provided, the fields will be ignored.
+> IMPORTANT: Typeson uses getters and setters to access the fields of the objects. If not provided,
+> the fields will be ignored.
 
 ### Serialization
 
@@ -176,66 +183,81 @@ public class Cat extends Animal {
 ```java
 
 public class Main {
-    public static void main(String[] args) {
-        Animal animal = new Dog();
-        animal.setName("Snoopy");
-        ((Dog) animal).setBreed("Beagle");
-        Typeson typeson = new Typeson();
-        String json = typeson.marshall(animal); 
-        // output: {"type":"dog","name":"Snoopy","breed":"Beagle"}
-    }
+   public static void main(String[] args) {
+      Animal animal = new Dog();
+      animal.setName("Snoopy");
+      ((Dog) animal).setBreed("Beagle");
+      Typeson typeson = new Typeson();
+      String json = typeson.marshall(animal);
+      // output: {"type":"dog","name":"Snoopy","breed":"Beagle"}
+   }
 }
 ```
 
-If the "field" attribute is not specified in the `@ElementType` annotation, the default value is "TYPESON_FIELD_TYPE".
+If the "field" attribute is not specified in the `@ElementType` annotation, the default value is "
+TYPESON_FIELD_TYPE".
 
 ```java
+
 @ElementType(name = "animal")
 public class Animal {
-    public String name;
+   public String name;
 }
 
 // ...
 
 public class Main {
-    public static void main(String[] args) {
-        Animal animal = new Dog();
-        // ...
-        String json = typeson.serialize(animal); 
-    }
+   public static void main(String[] args) {
+      Animal animal = new Dog();
+      // ...
+      String json = typeson.serialize(animal);
+   }
 }
 ```
 
 Output:
 
 ```json
-{"TYPESON_FIELD_TYPE":"dog","name":"Snoopy","breed":"Beagle"}
+{
+  "TYPESON_FIELD_TYPE": "dog",
+  "name": "Snoopy",
+  "breed": "Beagle"
+}
 ```
 
-> The "name" attribute is mandatory in the `@ElementType` annotation. If not specified, an exception will be thrown.
+> The "name" attribute is mandatory in the `@ElementType` annotation. If not specified, an exception
+> will be thrown.
 
 #### List Serialization
 
 ```java
 import java.util.ArrayList;
 import java.util.List;
+
 import io.github.achachraf.typeson.interlay.Typeson;
 
 public class Main {
-    public static void main(String[] args) {
-        List<Animal> animals = new ArrayList<>();
-        animals.add(new Dog());
-        animals.add(new Cat());
-        Typeson typeson = new Typeson();
-        String json = typeson.marshall(animals); 
-    }
+   public static void main(String[] args) {
+      List<Animal> animals = new ArrayList<>();
+      animals.add(new Dog());
+      animals.add(new Cat());
+      Typeson typeson = new Typeson();
+      String json = typeson.marshall(animals);
+   }
 }
 ```
 
 Output:
 
 ```json
-[{"type":"dog"},{"type":"cat"}]
+[
+  {
+    "type": "dog"
+  },
+  {
+    "type": "cat"
+  }
+]
 ```
 
 #### Map Serialization
@@ -253,27 +275,31 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 @ElementType("specificDog")
 public class SpecificDog extends Dog {
-    @JsonProperty("dog_breed")
-    public String breed;
+   @JsonProperty("dog_breed")
+   public String breed;
 }
 
 // ...
 
 public class Main {
-    public static void main(String[] args) {
-        Animal animal = new SpecificDog();
-        animal.setName("Snoopy");
-        ((SpecificDog) animal).setBreed("Beagle");
-        Typeson typeson = new Typeson();
-        String json = typeson.marshall(animal); 
-    }
+   public static void main(String[] args) {
+      Animal animal = new SpecificDog();
+      animal.setName("Snoopy");
+      ((SpecificDog) animal).setBreed("Beagle");
+      Typeson typeson = new Typeson();
+      String json = typeson.marshall(animal);
+   }
 }
 ```
 
 Output:
 
 ```json
-{"type":"specificDog","name":"Snoopy","dog_breed":"Beagle"}
+{
+  "type": "specificDog",
+  "name": "Snoopy",
+  "dog_breed": "Beagle"
+}
 ```
 
 ### Deserialization
@@ -282,37 +308,37 @@ Unlike the serialization, the deserialization provides 3 APIs:
 
 - `unmarshall(String json, Class<T> clazz): T` for single object deserialization.
 - `unmarshallList(String json, Class<T> clazz): List<T>` for list deserialization.
-- `unmarshallList(String json, TypeReference<T> typeReference): T` for list deserialization with complex types.
-
+- `unmarshallList(String json, TypeReference<T> typeReference): T` for list deserialization with
+  complex types.
 
 #### Simple Deserialization
 
 ```java
 
 public class Main {
-    public static void main(String[] args) {
-        String json = "{\"type\":\"dog\",\"name\":\"Snoopy\",\"breed\":\"Beagle\"}";
-        Typeson typeson = new Typeson();
-        Animal animal = typeson.unmarshall(json, Animal.class);
-        assert animal instanceof Dog; // true
-    }
+   public static void main(String[] args) {
+      String json = "{\"type\":\"dog\",\"name\":\"Snoopy\",\"breed\":\"Beagle\"}";
+      Typeson typeson = new Typeson();
+      Animal animal = typeson.unmarshall(json, Animal.class);
+      assert animal instanceof Dog; // true
+   }
 }
 ```
 
-If the "Dog" class does not have the `@ElementType` annotation, the json will be deserialized to the "Animal" class.
+If the "Dog" class does not have the `@ElementType` annotation, the json will be deserialized to
+the "Animal" class.
 
 ```java
 
 public class Main {
-    public static void main(String[] args) {
-        String json = "{\"type\":\"dog\",\"name\":\"Snoopy\",\"breed\":\"Beagle\"}";
-        Typeson typeson = new Typeson();
-        Animal animal = typeson.unmarshall(json, Animal.class);
-        assert animal instanceof Animal; // true
-    }
+   public static void main(String[] args) {
+      String json = "{\"type\":\"dog\",\"name\":\"Snoopy\",\"breed\":\"Beagle\"}";
+      Typeson typeson = new Typeson();
+      Animal animal = typeson.unmarshall(json, Animal.class);
+      assert animal instanceof Animal; // true
+   }
 }
 ```
-
 
 #### List Deserialization
 
@@ -335,14 +361,15 @@ We will use the following JSON for the examples:
 
 ```java
 import java.util.List;
+
 import io.github.achachraf.typeson.interlay.Typeson;
 
 public class Main {
-    public static void main(String[] args) {
-        String json = "above json";
-        Typeson typeson = new Typeson();
-        List<Animal> animals = typeson.unmarshallList(json, Animal.class);
-    }
+   public static void main(String[] args) {
+      String json = "above json";
+      Typeson typeson = new Typeson();
+      List<Animal> animals = typeson.unmarshallList(json, Animal.class);
+   }
 }
 ```
 
@@ -350,7 +377,7 @@ If having more advanced types, you can use the `TypeReference` class:
 
 ```json
 [
- [
+  [
     {
       "type": "dog",
       "name": "Snoopy",
@@ -361,8 +388,8 @@ If having more advanced types, you can use the `TypeReference` class:
       "name": "Garfield",
       "lives": 9
     }
-     ],
-     [
+  ],
+  [
     {
       "type": "dog",
       "name": "Snoopy",
@@ -373,18 +400,20 @@ If having more advanced types, you can use the `TypeReference` class:
       "name": "Garfield",
       "lives": 9
     }
- ]
+  ]
 ]
 ```
 
 ```java
 
 public class Main {
-    public static void main(String[] args) {
-        String json = "above json";
-        Typeson typeson = new Typeson();
-        List<List<Animal>> animals = typeson.unmarshallList(json, new TypeReference<List<List<Animal>>>() {});
-    }
+   public static void main(String[] args) {
+      String json = "above json";
+      Typeson typeson = new Typeson();
+      List<List<Animal>> animals = typeson.unmarshallList(json,
+            new TypeReference<List<List<Animal>>>() {
+            });
+   }
 }
 ```
 
@@ -396,20 +425,20 @@ Not supported yet.
 
 Typeson keep support for the main Jackson annotations for the deserialization:
 
-- `@JsonProperty` 
+- `@JsonProperty`
 - `@JsonAlias`
 - `@JsonIgnore`
 
 ```java
 
 public class Main {
-    public static void main(String[] args) {
-        String json = "{\"type\":\"specificDog\",\"name\":\"Snoopy\",\"dog_breed\":\"Beagle\"}";
-        Typeson typeson = new Typeson();
-        Animal animal = typeson.unmarshall(json, Animal.class);
-        assert animal instanceof SpecificDog; // true
-        assert ((SpecificDog) animal).getBreed().equals("Beagle"); // true
-    }
+   public static void main(String[] args) {
+      String json = "{\"type\":\"specificDog\",\"name\":\"Snoopy\",\"dog_breed\":\"Beagle\"}";
+      Typeson typeson = new Typeson();
+      Animal animal = typeson.unmarshall(json, Animal.class);
+      assert animal instanceof SpecificDog; // true
+      assert ((SpecificDog) animal).getBreed().equals("Beagle"); // true
+   }
 }
 ```
 
@@ -417,62 +446,71 @@ If you think there is a missing annotation, please open an issue.
 
 ### Customization
 
-The customization is only available for the deserialization with these 2 properties:
-
-- FAIL_ON_NULL_FOR_PRIMITIVES, default: false
-- FAIL_ON_UNKNOWN_PROPERTIES, default: true
-
-The `Typeson` class provides 2 constructors:
-
-- `Typeson()` for the default configuration.
-- `Typeson(ConfigProvider)` for the custom configuration.
-
-A `ConfigProvider` is a functional interface that provides the configuration:
+The customization is available for the serialization and deserialization base on Jackson's
+ObjectMapper configuration.
 
 ```java
-public interface ConfigProvider {
-    
-    boolean getProperty(String key);
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.achachraf.typeson.interlay.Typeson;
+
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES;
+import static com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES;
+
+public class ConfigExample() {
+
+   public void config() {
+      // prepare the configuration using Jackson API
+      ObjectMapper objectMapper = new ObjectMapper()
+            .enable(FAIL_ON_NULL_FOR_PRIMITIVES)
+            .disable(FAIL_ON_UNKNOWN_PROPERTIES);
+      
+      // then instantiante Typeson using the other constructor with objectMapper
+      Typeson typeson = new Typeson(objectMapper);
+   }
+
 }
 ```
 
-A default implementation is provided with a HashMap that could be reused for the customization:
+Generally speaking, `JsonReadFeature` and `JsonWriteFeature` should be supported because ther are
+used to transform the JsonNode to/from String or Stream, and `SerializationFeature` and
+`DeserializationFeature` may NOT be supported because they are on the binding and mapping part
+which has been partially re-implemented by Typeson. But of course there can be exceptions.
 
-```java
+Typeson project has tested and/or reimplemented those features:
 
-import io.github.achachraf.typeson.interlay.ConfigProviderMap;
+- `DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES`, default: false
+- `DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES`, default: true
+- `JsonReadFeature.ALLOW_SINGLE_QUOTES`, default: false
 
-public class Main {
-    public static void main(String[] args) {
-        Typeson typeson = new Typeson(
-                new ConfigProviderMap()
-                        .setProperty(ConfigProviderMap.FAIL_ON_NULL_FOR_PRIMITIVES, true)
-                        .setProperty(ConfigProviderMap.FAIL_ON_UNKNOWN_PROPERTIES, false)
-        );
-        // ...
-    }
-}
-```
+Inclusion sush as `objectMapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);` is also
+supported but not enabled by default.
 
 ## Why Typeson?
 
-As shown in the first example, the serialization of the polymorphic objects is not easy with the Jackson library, as it requires the parent class to know all the child classes.
-This breaks one of the main principles of the object-oriented programming: _**the OCP (Open-Closed Principle)**_.
+As shown in the first example, the serialization of the polymorphic objects is not easy with the
+Jackson library, as it requires the parent class to know all the child classes.
+This breaks one of the main principles of the object-oriented programming:
+_**the OCP (Open-Closed Principle)**_.
 
-In addition, it could also break many other principles like the _**LSP (Liskov Substitution Principle)**_ and the _**SRP (Single Responsibility Principle)**_.
+In addition, it could also break many other principles like the
+_**LSP (Liskov Substitution Principle)**_ and the _**SRP (Single Responsibility Principle)**_.
 
-The Typeson library provides a solution for this problem by using the `@ElementType` annotation and an advanced ClassPath scanning for the deserialization.
+The Typeson library provides a solution for this problem by using the `@ElementType` annotation and
+an advanced ClassPath scanning for the deserialization.
 
 ## How does it work?
 
-The main innovation part in Typeson is the deserialization, as the serialization is just a simple Jackson serialization with the type field injection.
+The main innovation part in Typeson is the deserialization, as the serialization is just a simple
+Jackson serialization with the type field injection.
 
-The deserialization is based on the `@ElementType` annotation and the ClassPath scanning with the [ClassGraph](https://github.com/classgraph/classgraph) library.
+The deserialization is based on the `@ElementType` annotation and the ClassPath scanning with
+the [ClassGraph](https://github.com/classgraph/classgraph) library.
 
-The library scans the classpath for the classes that have the `@ElementType` annotation, and resolve the type of the object by using the `type` field in the JSON.
+The library scans the classpath for the classes that have the `@ElementType` annotation, and resolve
+the type of the object by using the `type` field in the JSON.
 
-For optimization, the library uses a cache for the scanned classes, so the scanning will be done only once per execution.
-
+For optimization, the library uses a cache for the scanned classes, so the scanning will be done
+only once per execution.
 
 ## Building from source
 
@@ -490,7 +528,8 @@ cd Typeson
 mvn clean package
 ```
 
-JAR file and javadoc will be available in target/ directory. To make it available to any other Maven project on your machine :
+JAR file and javadoc will be available in target/ directory. To make it available to any other Maven
+project on your machine :
 
 ```bash
 mvn install
@@ -516,7 +555,8 @@ Test also provides some interesting examples of the library usage.
 
 ## Contributing
 
-Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would
+like to change.
 
 Long Live Open Source ❤️
 
@@ -524,8 +564,12 @@ Long Live Open Source ❤️
 
 Copyright 2023-2024 Achraf ACHKARI-BEGDOURI.
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use this project except in compliance with the License. You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this project except
+in compliance with the License. You may obtain a copy of the License at
 
 http://www.apache.org/licenses/LICENSE-2.0
 
-Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an " AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions and limitations under the License.
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an " AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the
+License.

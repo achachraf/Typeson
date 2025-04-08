@@ -24,7 +24,11 @@ public class SerializerServiceImpl implements SerializerService {
 
     private final TypingService typingService = new TypingServiceImpl();
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper;
+
+    public SerializerServiceImpl(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
 
     @Override
     public String serialize(Object object){

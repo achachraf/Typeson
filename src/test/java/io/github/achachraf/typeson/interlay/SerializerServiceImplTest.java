@@ -1,5 +1,6 @@
 package io.github.achachraf.typeson.interlay;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.achachraf.typeson.interlay.mock.*;
 import org.junit.jupiter.api.Test;
 
@@ -9,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SerializerServiceImplTest {
 
-    private final SerializerServiceImpl serializerService = new SerializerServiceImpl();
+    private final SerializerServiceImpl serializerService = new SerializerServiceImpl(new ObjectMapper());
 
     @Test
     public void testSerialize(){

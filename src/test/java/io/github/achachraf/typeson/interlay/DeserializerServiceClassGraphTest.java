@@ -1,6 +1,5 @@
 package io.github.achachraf.typeson.interlay;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.io.JsonEOFException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -17,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class DeserializerServiceClassGraphTest {
 
 
-    private final DeserializerServiceClassGraph deserializerService = new DeserializerServiceClassGraph(new ConfigProviderMap());
+    private final DeserializerServiceClassGraph deserializerService = new DeserializerServiceClassGraph(new ObjectMapper());
 
     @Test
     public void testDeserialize(){
@@ -156,8 +155,7 @@ public class DeserializerServiceClassGraphTest {
     @Test
     public void testDeserializeListInObjectNoType(){
         DeserializerServiceClassGraph deserializerService = new DeserializerServiceClassGraph(
-                new ConfigProviderMap()
-                        .setProperty(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
+              new ObjectMapper().disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
         );
         String json = "{\"name\":\"Afigure\",\"shapes\":[{\"name\":\"Acircle\",\"radius\":10},{\"name\":\"Arectangle\",\"width\":10,\"height\":20}, {\"name\":\"Ashape\"}]}";
         Figure figure = deserializerService.deserialize(json, Figure.class);

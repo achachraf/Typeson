@@ -1,6 +1,7 @@
 package io.github.achachraf.typeson.interlay;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.achachraf.typeson.TypesonException;
 import io.github.achachraf.typeson.aplication.DeserializationException;
 import io.github.achachraf.typeson.interlay.mock.*;
@@ -233,8 +234,7 @@ public class TypesonUnmarshallTest {
     @Test
     public void testUnmarshallWithCustomConfig(){
         Typeson typeson = new Typeson(
-                new ConfigProviderMap()
-                        .setProperty(FAIL_ON_UNKNOWN_PROPERTIES, false)
+              new ObjectMapper().disable(FAIL_ON_UNKNOWN_PROPERTIES)
         );
         String data = "{\"type\":\"circle\",\"name\":\"Acircle\",\"radius\":10,\"color\":\"red\"}" ;
         Circle circle = typeson.unmarshall(data, Circle.class);
@@ -246,8 +246,7 @@ public class TypesonUnmarshallTest {
     @Test
     public void testUnmarshallWithCustomConfigFail(){
         Typeson typeson = new Typeson(
-                new ConfigProviderMap()
-                        .setProperty(FAIL_ON_UNKNOWN_PROPERTIES, true)
+              new ObjectMapper().enable(FAIL_ON_UNKNOWN_PROPERTIES)
         );
         String data = "{\"type\":\"circle\",\"name\":\"Acircle\",\"radius\":10,\"color\":\"red\"}" ;
         Throwable throwable = assertThrows(TypesonException.class, () ->
